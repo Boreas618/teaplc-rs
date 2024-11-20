@@ -1,6 +1,7 @@
-use lalrpop_util::lalrpop_mod;
+mod ast;
+lalrpop_mod!(pub teapl);
 
-lalrpop_mod!(teapl);
+use lalrpop_util::lalrpop_mod;
 
 fn main() {
     println!("Hello, world!");

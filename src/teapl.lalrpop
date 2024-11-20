@@ -1,10 +1,53 @@
 use std::str::FromStr;
+use crate::ast;
 
 grammar;
 
-pub Term: i32 = {
-    <n:Num> => n,
-    "(" <t:Term> ")" => t,
+pub Program: Box<ast::Program> = {
+    ProgramElementList => Box::new(ast::Program{elements: <>})
 };
 
-Num: i32 = <s:r"[0-9]+"> => i32::from_str(s).unwrap();
+ProgramElementList: Box<u32> = "dummy" => Box::new(1);
+
+Num: i32 = {
+    "0" => 0,
+    <s:r"[1-9][0-9]*"> => i32::from_str(s).unwrap(),
+};
+
+Identifier = r"[a-zA-Z_][a-zA-Z0-9_]*";
+
+Add = "+";
+Sub = "-";
+Mul = "*";
+Div = "/";
+Let = "let";
+Colon = ":";
+Semicolon = ";";
+Assignment = "=";
+Fn = "fn";
+LCurlyBrace = "{";
+RCurlyBrace = "}";
+RArrow = "->";
+LSquareBracket = "[";
+RSquareBracket = "]";
+Dot = ".";
+LParentheses = "(";
+RParentheses = ")";
+Comma = ",";
+Break = "break";
+Continue = "continue";
+Return = "ret";
+If = "if";
+Else = "else";
+While = "while";
+And = "&&";
+Or = "||";
+Not = "!";
+Equal = "==";
+NotEqual = "!=";
+LessThan = "<";
+GreaterThan = ">";
+LessEqual = "<=";
+GreaterEqual = ">=";
+Struct = "struct";
+Int = "int";
