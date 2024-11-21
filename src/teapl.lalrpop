@@ -7,7 +7,18 @@ pub Program: Box<ast::Program> = {
     ProgramElementList => Box::new(ast::Program{elements: <>})
 };
 
-ProgramElementList: Box<u32> = "dummy" => Box::new(1);
+ProgramElementList: Box<ast::ProgramElementList> = {
+    <pe: ProgramElement> <pl: ProgramElementList> => Box::new(
+        ast::ProgramElementList {
+            element: pe,
+            next: pl
+        }
+    )
+}
+
+ProgramElement: Box<i32> = {
+    "VarDecl" => Box::new(114514)
+}
 
 Num: i32 = {
     "0" => 0,
