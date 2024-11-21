@@ -1,4 +1,4 @@
-type Pos = (usize, usize);
+type Pos = usize;
 
 pub enum NativeType {
     Int,
@@ -50,11 +50,11 @@ pub struct MemberExpr {
 pub enum ExprUnitInner {
     Num(i32),
     Id(String),
-    Arith(ArithExpr),
-    FnCall(FnCall),
-    ArrayExpr(ArrayExpr),
-    MemberExpr(MemberExpr),
-    ArithUExpr(ArithUExpr),
+    Arith(Box<ArithExpr>),
+    FnCall(Box<FnCall>),
+    ArrayExpr(Box<ArrayExpr>),
+    MemberExpr(Box<MemberExpr>),
+    ArithUExpr(Box<ArithUExpr>),
 }
 
 pub struct ExprUnit {
@@ -325,12 +325,12 @@ pub struct ProgramElementList {
 }
 
 pub enum ProgramElementInner {
-    VarDecl(VarDeclStmt),
-    StructDef(StructDef),
-    FnDecl(FnDeclStmt),
-    FnDef(FnDef),
+    VarDecl(Box<VarDeclStmt>),
+    StructDef(Box<StructDef>),
+    FnDecl(Box<FnDeclStmt>),
+    FnDef(Box<FnDef>),
 }
 
 pub struct ProgramElement {
-    pub inner: Box<ProgramElementInner>,
+    pub inner: ProgramElementInner,
 }

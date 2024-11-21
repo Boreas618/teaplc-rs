@@ -16,8 +16,80 @@ ProgramElementList: Box<ast::ProgramElementList> = {
     )
 }
 
-ProgramElement: Box<i32> = {
-    "VarDecl" => Box::new(114514)
+ProgramElement: Box<ast::ProgramElement> = {
+    VarDeclStmt => Box::new(
+        ast::ProgramElement {
+            inner: ast::ProgramElementInner::VarDecl(<>)
+        }
+    ),
+    StructDef => Box::new(
+        ast::ProgramElement {
+            inner: ast::ProgramElementInner::StructDef(<>)
+        }
+    ),
+    FnDecl => Box::new(
+        ast::ProgramElement {
+            inner: ast::ProgramElementInner::FnDeclStmt(<>)
+        }
+    )
+    FnDef => Box::new(
+        ast::ProgramElement {
+            inner: ast::ProgramElementInner::FnDef(<>)
+        }
+    )
+}
+
+StructDef: Box<ast::StructDef> = {
+    <begin: @L> Struct <id: Identifier> LCurlyBrace <vdl: VarDeclList> RCurlyBrace =>  Box::new(
+        ast::StructDef {
+            pos: begin,
+            id: String::from(id),
+            decls: vdl,
+        }
+    )
+}
+
+ExprUnit: Box<ast::ExprUnit> = {
+    <begin: @L> <num: Num> => Box::new(
+        ast::ExprUnit {
+            pos: begin,
+            inner: ast::ExprUnitInner::Num(num)
+        }
+    ),
+    <begin: @L> <id: Identifier> => Box::new(
+        ast::ExprUnit {
+            pos: begin,
+            inner: ast::ExprUnitInner::Id(String::from(id))
+        }
+    ),
+    <begin: @L> LParentheses <ae: ArithExpr> RParentheses => Box::new(
+        ast::ExprUnit {
+            pos: begin,
+            inner: ast::ExprUnitInner::ArithExpr(ae)
+        }
+    ),
+    <begin: @L> <fc: FnCall> => Box::new(
+        ast::ExprUnit {
+            pos: begin,
+            inner: ast::ExprUnitInner::FnCall(fc)
+        }
+    ),
+    <begin: @L> <ae: ArrayExpr> => Box::new(
+        ast::ExprUnit {
+            pos: begin,
+            inner: ast::ExprUnitInner::ArrayExpr(ae)
+        }
+    ),
+    <begin: @L> <lv: LeftVal> Dot <id: Identifier> => Box::new(
+        ast::ExprUnit {
+            pos: begin,
+            inner: ast::ExprUnitInner::MemberExpr(
+                pos: begin,
+                id: String::from(lv->inner as LeftValInner::Id),
+                member_id: String::from(id)
+            )
+        }
+    )
 }
 
 Num: i32 = {
