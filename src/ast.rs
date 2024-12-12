@@ -5,13 +5,13 @@ pub enum NativeType {
 }
 
 pub enum TypeInner {
-    NativeType(NativeType),
-    StructType(String),
+    NativeType(Box<NativeType>),
+    StructType(Box<String>),
 }
 
 pub struct Type {
     pub pos: Pos,
-    pub inner: Box<TypeInner>,
+    pub inner: TypeInner,
 }
 
 pub struct RightValList {
@@ -43,7 +43,7 @@ pub struct ArrayExpr {
 
 pub struct MemberExpr {
     pub pos: Pos,
-    pub id: String,
+    pub var_id: String,
     pub member_id: String,
 }
 
@@ -145,35 +145,35 @@ pub struct ComExpr {
 }
 
 pub enum BoolUnitInner {
-    ComExpr(ComExpr),
-    BoolExpr(BoolExpr),
-    BoolUOpExpr(BoolUOpExpr),
+    ComExpr(Box<ComExpr>),
+    BoolExpr(Box<BoolExpr>),
+    BoolUOpExpr(Box<BoolUOpExpr>),
 }
 
 pub struct BoolUnit {
     pub pos: Pos,
-    pub inner: Box<BoolUnitInner>,
+    pub inner: BoolUnitInner,
 }
 
 pub enum RightValInner {
-    ArithExpr(ArithExpr),
-    BoolExpr(BoolExpr),
+    ArithExpr(Box<ArithExpr>),
+    BoolExpr(Box<BoolExpr>),
 }
 
 pub struct RightVal {
     pub pos: Pos,
-    pub inner: Box<RightValInner>,
+    pub inner: RightValInner,
 }
 
 pub enum LeftValInner {
     Id(String),
-    ArrayExpr(ArrayExpr),
-    MemberExpr(MemberExpr),
+    ArrayExpr(Box<ArrayExpr>),
+    MemberExpr(Box<MemberExpr>),
 }
 
 pub struct LeftVal {
     pub pos: Pos,
-    pub inner: Box<LeftValInner>,
+    pub inner: LeftValInner,
 }
 
 pub struct AssignmentStmt {
@@ -185,24 +185,24 @@ pub struct AssignmentStmt {
 pub struct VarDeclScalar {
     pub pos: Pos,
     pub id: String,
-    pub val_type: Box<Type>,
+    pub real_type: Box<Type>,
 }
 
 pub struct VarDeclArray {
     pub pos: Pos,
     pub id: String,
     pub len: usize,
-    pub val_type: Box<Type>,
+    pub real_type: Box<Option<Type>>,
 }
 
 pub enum VarDeclInner {
-    Scalar(VarDeclScalar),
-    Array(VarDeclArray),
+    Scalar(Box<VarDeclScalar>),
+    Array(Box<VarDeclArray>),
 }
 
 pub struct VarDecl {
     pub pos: Pos,
-    pub inner: Box<VarDeclInner>,
+    pub inner: VarDeclInner,
 }
 
 pub enum VarDefInner {
@@ -218,7 +218,7 @@ pub struct VarDef {
 pub struct VarDefScalar {
     pub pos: Pos,
     pub id: String,
-    pub valtype: Box<Type>,
+    pub real_type: Box<Option<Type>>,
     pub val: Box<RightVal>,
 }
 
@@ -226,18 +226,18 @@ pub struct VarDefArray {
     pub pos: Pos,
     pub id: String,
     pub len: usize,
-    pub valtype: Box<Type>,
+    pub real_type: Box<Option<Type>>,
     pub vals: Box<RightValList>,
 }
 
 pub enum VarDeclStmtInner {
-    Decl(VarDecl),
-    Def(VarDef),
+    Decl(Box<VarDecl>),
+    Def(Box<VarDef>),
 }
 
 pub struct VarDeclStmt {
     pub pos: Pos,
-    pub inner: Box<VarDeclStmtInner>,
+    pub inner: VarDeclStmtInner,
 }
 
 pub struct VarDeclList {
@@ -255,7 +255,7 @@ pub struct FnDecl {
     pub pos: Pos,
     pub id: String,
     pub param_decl: Box<ParamDecl>,
-    pub ret_type: Box<Type>,
+    pub ret_type: Box<Option<Type>>,
 }
 
 pub struct ParamDecl {
@@ -272,13 +272,13 @@ pub struct IfStmt {
     pub pos: Pos,
     pub bool_unit: Box<BoolUnit>,
     pub if_stmts: Box<CodeBlockStmtList>,
-    pub else_stmts: Box<CodeBlockStmtList>,
+    pub else_stmts: Option<Box<CodeBlockStmtList>>,
 }
 
 pub struct WhileStmt {
     pub pos: Pos,
     pub bool_unit: Box<BoolUnit>,
-    pub while_stmts: Box<CodeBlockStmtList>,
+    pub stmts: Box<CodeBlockStmtList>,
 }
 
 pub struct CallStmt {
@@ -288,21 +288,36 @@ pub struct CallStmt {
 
 pub struct ReturnStmt {
     pub pos: Pos,
-    pub val: Box<RightVal>,
+    pub val: Option<Box<RightVal>>,
+}
+
+pub struct ContinueStmt {
+    pub pos: Pos,
+}
+
+pub struct BreakStmt {
+    pub pos: Pos,
+}
+
+pub struct NullStmt {
+    pub pos: Pos,
 }
 
 pub enum CodeBlockStmtInner {
-    VarDecl(VarDeclStmt),
-    Assignment(AssignmentStmt),
-    Call(CallStmt),
-    If(IfStmt),
-    While(WhileStmt),
-    Return(ReturnStmt),
+    VarDecl(Box<VarDeclStmt>),
+    Assignment(Box<AssignmentStmt>),
+    Call(Box<CallStmt>),
+    If(Box<IfStmt>),
+    While(Box<WhileStmt>),
+    Return(Box<ReturnStmt>),
+    Continue(Box<ContinueStmt>),
+    Break(Box<BreakStmt>),
+    Null(Box<NullStmt>),
 }
 
 pub struct CodeBlockStmt {
     pub pos: Pos,
-    pub inner: Box<CodeBlockStmtInner>,
+    pub inner: CodeBlockStmtInner,
 }
 
 pub struct CodeBlockStmtList {
