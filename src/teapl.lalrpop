@@ -103,54 +103,69 @@ ExprUnit: Box<ast::ExprUnit> = {
 };
 
 ArithExpr: Box<ast::ArithExpr> = {
-    <begin: @L> <arith_biop_expr: ArithBiOpExpr> => Box::new(
-        ast::ArithExpr {
-            pos: begin,
-            inner: ast::ArithExprInner::ArithBiOpExpr(arith_biop_expr).
-        }
-    ),
+    #[precedence(level="0")]
     <begin: @L> <expr_unit: ExprUnit> => Box::new(
         ast::ArithExpr {
             pos: begin,
             inner: ast::ArithExprInner::ExprUnit(expr_unit).
         }
     ),
-};
-
-ArithBiOpExpr: Box<ast::ArithBiOpExpr> = {
-    #[precedence(level="0")]
-    <begin: @L> <arith_expr_l: ArithExpr> Mul <arith_expr_r: ArithExpr> => Box::new(
-        ast::ArithBiOpExpr {
-            pos: begin,
-            op: ArithBiOp::Mul,
-            left: arith_expr_l,
-            right: arith_expr_r
-        }
-    ),
-    <begin: @L> <arith_expr_l: ArithExpr> Div <arith_expr_r: ArithExpr> => Box::new(
-        ast::ArithBiOpExpr {
-            pos: begin,
-            op: ArithBiOp::Div,
-            left: arith_expr_l,
-            right: arith_expr_r
-        }
-    ),
 
     #[precedence(level="1")] #[assoc(side="left")]
-    <begin: @L> <arith_expr_l: ArithExpr> Add <arith_expr_r: ArithExpr> => Box::new(
-        ast::ArithBiOpExpr {
+    <begin: @L> <arith_expr_l: ArithExpr> Mul <arith_expr_r: ArithExpr> => Box::new(
+        ast::ArithExpr {
             pos: begin,
-            op: ArithBiOp::Add,
-            left: arith_expr_l,
-            right: arith_expr_r
+            inner: ast::ArithExprInner::ArithBiOpExpr(Box::new(
+                ast::ArithBiOpExpr {
+                    pos: begin,
+                    op: ArithBiOp::Mul,
+                    left: arith_expr_l,
+                    right: arith_expr_r
+                }
+            )).
         }
     ),
-    <begin: @L> <arith_expr_l: ArithExpr> Sub <arith_expr_r: ArithExpr> => Box::new(
-        ast::ArithBiOpExpr {
+
+    <begin: @L> <arith_expr_l: ArithExpr> Div <arith_expr_r: ArithExpr> => Box::new(
+        ast::ArithExpr {
             pos: begin,
-            op: ArithBiOp::Sub,
-            left: arith_expr_l,
-            right: arith_expr_r
+            inner: ast::ArithExprInner::ArithBiOpExpr(Box::new(
+                ast::ArithBiOpExpr {
+                    pos: begin,
+                    op: ArithBiOp::Div,
+                    left: arith_expr_l,
+                    right: arith_expr_r
+                }
+            )).
+        }
+    ),
+
+    #[precedence(level="2")] #[assoc(side="left")]
+    <begin: @L> <arith_expr_l: ArithExpr> Add <arith_expr_r: ArithExpr> => Box::new(
+        ast::ArithExpr {
+            pos: begin,
+            inner: ast::ArithExprInner::ArithBiOpExpr(Box::new(
+                ast::ArithBiOpExpr {
+                    pos: begin,
+                    op: ArithBiOp::Add,
+                    left: arith_expr_l,
+                    right: arith_expr_r
+                }
+            )).
+        }
+    ),
+
+    <begin: @L> <arith_expr_l: ArithExpr> Sub <arith_expr_r: ArithExpr> => Box::new(
+        ast::ArithExpr {
+            pos: begin,
+            inner: ast::ArithExprInner::ArithBiOpExpr(Box::new(
+                ast::ArithBiOpExpr {
+                    pos: begin,
+                    op: ArithBiOp::Sub,
+                    left: arith_expr_l,
+                    right: arith_expr_r
+                }
+            )).
         }
     ),
 };
