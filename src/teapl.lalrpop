@@ -11,7 +11,7 @@ ProgramElementList: Box<ast::ProgramElementList> = {
     <pe: ProgramElement> <pl: ProgramElementList> => Box::new(
         ast::ProgramElementList {
             element: pe,
-            next: pl
+            next: Some(pl)
         }
     )
 };
@@ -19,7 +19,7 @@ ProgramElementList: Box<ast::ProgramElementList> = {
 ProgramElement: Box<ast::ProgramElement> = {
     VarDeclStmt => Box::new(
         ast::ProgramElement {
-            inner: ast::ProgramElementInner::VarDecl(<>)
+            inner: ast::ProgramElementInner::VarDeclStmt(<>)
         }
     ),
     StructDef => Box::new(
@@ -27,11 +27,11 @@ ProgramElement: Box<ast::ProgramElement> = {
             inner: ast::ProgramElementInner::StructDef(<>)
         }
     ),
-    FnDecl => Box::new(
+    FnDeclStmt => Box::new(
         ast::ProgramElement {
             inner: ast::ProgramElementInner::FnDeclStmt(<>)
         }
-    )
+    ),
     FnDef => Box::new(
         ast::ProgramElement {
             inner: ast::ProgramElementInner::FnDef(<>)
@@ -43,7 +43,7 @@ StructDef: Box<ast::StructDef> = {
     <begin: @L> Struct <id: Identifier> LCurlyBrace <vdl: VarDeclList> RCurlyBrace =>  Box::new(
         ast::StructDef {
             pos: begin,
-            id: String::from(id),
+            id: id.to_string(),
             decls: vdl,
         }
     )
@@ -59,7 +59,7 @@ ExprUnit: Box<ast::ExprUnit> = {
     <begin: @L> <id: Identifier> => Box::new(
         ast::ExprUnit {
             pos: begin,
-            inner: ast::ExprUnitInner::Id(String::from(id))
+            inner: ast::ExprUnitInner::Id(id.to_string())
         }
     ),
     <begin: @L> LParentheses <ae: ArithExpr> RParentheses => Box::new(
@@ -81,21 +81,23 @@ ExprUnit: Box<ast::ExprUnit> = {
         }
     ),
     <begin: @L> <lv: LeftVal> Dot <member_id: Identifier> => Box::new(
-        match (lv->inner) {
-            LeftValInner::Id(lval_id) => {
+        match lv.inner {
+            ast::LeftValInner::Id(lval_id) => {
                 ast::ExprUnit {
                     pos: begin,
                     inner: ast::ExprUnitInner::MemberExpr(
-                        pos: begin,
-                        var_id: String::from(lval_id),
-                        member_id: String::from(member_id)
+                        Box::new(
+                            ast::MemberExpr {
+                                pos: begin,
+                                var_id: String::from(lval_id),
+                                member_id: String::from(member_id)
+                            }
+                        )
                     )
                 }
             },
             _ => {
                 panic!("[Error] The left value of a member expression should be a struct variable.");
-                
-                ()
             }
         }
     ),
@@ -107,7 +109,7 @@ ArithExpr: Box<ast::ArithExpr> = {
     <begin: @L> <expr_unit: ExprUnit> => Box::new(
         ast::ArithExpr {
             pos: begin,
-            inner: ast::ArithExprInner::ExprUnit(expr_unit).
+            inner: ast::ArithExprInner::ExprUnit(expr_unit)
         }
     ),
 
@@ -118,11 +120,11 @@ ArithExpr: Box<ast::ArithExpr> = {
             inner: ast::ArithExprInner::ArithBiOpExpr(Box::new(
                 ast::ArithBiOpExpr {
                     pos: begin,
-                    op: ArithBiOp::Mul,
+                    op: ast::ArithBiOp::Mul,
                     left: arith_expr_l,
                     right: arith_expr_r
                 }
-            )).
+            ))
         }
     ),
 
@@ -132,11 +134,11 @@ ArithExpr: Box<ast::ArithExpr> = {
             inner: ast::ArithExprInner::ArithBiOpExpr(Box::new(
                 ast::ArithBiOpExpr {
                     pos: begin,
-                    op: ArithBiOp::Div,
+                    op: ast::ArithBiOp::Div,
                     left: arith_expr_l,
                     right: arith_expr_r
                 }
-            )).
+            ))
         }
     ),
 
@@ -147,11 +149,11 @@ ArithExpr: Box<ast::ArithExpr> = {
             inner: ast::ArithExprInner::ArithBiOpExpr(Box::new(
                 ast::ArithBiOpExpr {
                     pos: begin,
-                    op: ArithBiOp::Add,
+                    op: ast::ArithBiOp::Add,
                     left: arith_expr_l,
                     right: arith_expr_r
                 }
-            )).
+            ))
         }
     ),
 
@@ -161,11 +163,11 @@ ArithExpr: Box<ast::ArithExpr> = {
             inner: ast::ArithExprInner::ArithBiOpExpr(Box::new(
                 ast::ArithBiOpExpr {
                     pos: begin,
-                    op: ArithBiOp::Sub,
+                    op: ast::ArithBiOp::Sub,
                     left: arith_expr_l,
                     right: arith_expr_r
                 }
-            )).
+            ))
         }
     ),
 };
@@ -174,13 +176,13 @@ RightValList: Box<ast::RightValList> = {
     <begin: @L> <right_val: RightVal> Comma <remainder: RightValList> => Box::new(
         ast::RightValList {
             head: right_val,
-            next: remainder
+            next: Some(remainder)
         }
     ),
     <begin: @L> <right_val: RightVal> => Box::new(
         ast::RightValList {
             head: right_val,
-            next: Option::None
+            next: None
         }
     ),
 };
@@ -188,28 +190,24 @@ RightValList: Box<ast::RightValList> = {
 ArrayExpr: Box<ast::ArrayExpr> = {
     <begin: @L> <left_val: LeftVal> LSquareBracket <num: Num> RSquareBracket => Box::new(
         ast::ArrayExpr {
-            pos: beign,
+            pos: begin,
             arr: left_val,
             idx: Box::new(
                 ast::IndexExpr {
                     pos: 0 /* TODO: the real position. */,
-                    inner: Box::new(
-                        ast::IndexExprInner::Num(num)
-                    )
+                    inner: ast::IndexExprInner::Num(num as usize)
                 }
             )
         }
     ),
     <begin: @L> <left_val: LeftVal> LSquareBracket <id: Identifier> RSquareBracket => Box::new(
         ast::ArrayExpr {
-            pos: beign,
+            pos: begin,
             arr: left_val,
             idx: Box::new(
                 ast::IndexExpr {
                     pos: 0 /* TODO: the real position. */,
-                    inner: Box::new(
-                        ast::IndexExprInner::Id(id)
-                    )
+                    inner: ast::IndexExprInner::Id(id.to_string())
                 }
             )
         }
@@ -228,24 +226,32 @@ BoolExpr: Box<ast::BoolExpr> = {
     <begin: @L> <bexpr_l: BoolExpr> And <bexpr_r: BoolExpr> => Box::new(
         ast::BoolExpr {
             pos: begin,
-            inner: ast::BoolExprInner::BoolBiOpExpr {
-                pos: begin,
-                op: ast::BoolBiOp::And,
-                left: bexpr_l,
-                right: bexpr_r
-            }
+            inner: ast::BoolExprInner::BoolBiOpExpr(
+                Box::new(
+                    ast::BoolBiOpExpr {
+                        pos: begin,
+                        op: ast::BoolBiOp::And,
+                        left: bexpr_l,
+                        right: bexpr_r
+                    }
+                )
+            )
         }
     ),
     #[precedence(level="2")] #[assoc(side="left")]
     <begin: @L> <bexpr_l: BoolExpr> Or <bexpr_r: BoolExpr> => Box::new(
         ast::BoolExpr {
             pos: begin,
-            inner: ast::BoolExprInner::BoolBiOpExpr {
-                pos: begin,
-                op: ast::BoolBiOp::Or,
-                left: bexpr_l,
-                right: bexpr_r
-            }
+            inner: ast::BoolExprInner::BoolBiOpExpr(
+                Box::new(
+                    ast::BoolBiOpExpr {
+                        pos: begin,
+                        op: ast::BoolBiOp::Or,
+                        left: bexpr_l,
+                        right: bexpr_r
+                    }
+                )
+            )
         }
     ),
 };
@@ -264,7 +270,7 @@ LeftVal: Box<ast::LeftVal> = {
     <begin: @L> <id: Identifier> => Box::new(
         ast::LeftVal {
             pos: begin,
-            inner: ast::LeftValInner::Id(id)
+            inner: ast::LeftValInner::Id(id.to_string())
         }
     ),
     <begin: @L> <array_expr: ArrayExpr> => Box::new(
@@ -273,15 +279,18 @@ LeftVal: Box<ast::LeftVal> = {
             inner: ast::LeftValInner::ArrayExpr(array_expr)
         }
     ),
-    <begin: @L> <l_val: LeftVal> Dot <id: Identifier> => Box::new(
+    <begin: @L> <lval: LeftVal> Dot <id: Identifier> => Box::new(
         ast::LeftVal {
             pos: begin,
             inner: ast::LeftValInner::MemberExpr(
                 Box::new(
-                    MemberExpr {
-                        pub pos: begin,
-                        pub var_id: left_val.inner as ast::LeftValInner::Id,
-                        pub member_id: id,
+                    ast::MemberExpr {
+                        pos: begin,
+                        var_id: match lval.inner {
+                            ast::LeftValInner::Id(id) => id.to_string(),
+                            _ => "?".to_string() // TODO: How to deal with this?
+                        },
+                        member_id: id.to_string(),
                     }
                 )
             )
@@ -327,7 +336,7 @@ VarDecl: Box<ast::VarDecl> = {
                 Box::new(
                     ast::VarDeclScalar {
                         pos: begin,
-                        id: id,
+                        id: id.to_string(),
                         real_type: t
                     }
                 )
@@ -341,8 +350,8 @@ VarDecl: Box<ast::VarDecl> = {
                 Box::new(
                     ast::VarDeclArray {
                         pos: begin,
-                        id: id,
-                        num: num,
+                        id: id.to_string(),
+                        len: num as usize,
                         real_type: t
                     }
                 )
@@ -356,8 +365,8 @@ VarDecl: Box<ast::VarDecl> = {
                 Box::new(
                     ast::VarDeclScalar {
                         pos: begin,
-                        id: id,
-                        real_type: Box::new(())
+                        id: id.to_string(),
+                        real_type: Box::new(None)
                     }
                 )
             )
@@ -370,9 +379,9 @@ VarDecl: Box<ast::VarDecl> = {
                 Box::new(
                     ast::VarDeclArray {
                         pos: begin,
-                        id: id,
-                        num: num,
-                        real_type: Box::new(())
+                        id: id.to_string(),
+                        len: num as usize,
+                        real_type: Box::new(None)
                     }
                 )
             )
@@ -388,7 +397,7 @@ VarDef: Box<ast::VarDef> = {
                 Box::new(
                     ast::VarDefScalar {
                         pos: begin,
-                        id: id,
+                        id: id.to_string(),
                         real_type: t,
                         val: right_val,
                     }
@@ -399,12 +408,12 @@ VarDef: Box<ast::VarDef> = {
     <begin: @L> <id: Identifier> LSquareBracket <num: Num> RSquareBracket Colon <t: Type> Assignment LCurlyBrace <rval_list: RightValList> RCurlyBrace => Box::new(
         ast::VarDef {
             pos: begin,
-            inner: ast::VarDef::Array(
+            inner: ast::VarDefInner::Array(
                 Box::new(
                     ast::VarDefArray {
                         pos: begin,
-                        id: id,
-                        len: num,
+                        id: id.to_string(),
+                        len: num as usize,
                         real_type: t,
                         vals: rval_list,
                     }
@@ -419,8 +428,8 @@ VarDef: Box<ast::VarDef> = {
                 Box::new(
                     ast::VarDefScalar {
                         pos: begin,
-                        id: id,
-                        real_type: Box::new(()),
+                        id: id.to_string(),
+                        real_type: Box::new(None),
                         val: right_val,
                     }
                 )
@@ -430,13 +439,13 @@ VarDef: Box<ast::VarDef> = {
     <begin: @L> <id: Identifier> LSquareBracket <num: Num> RSquareBracket Assignment LCurlyBrace <rval_list: RightValList> RCurlyBrace => Box::new(
         ast::VarDef {
             pos: begin,
-            inner: ast::VarDef::Array(
+            inner: ast::VarDefInner::Array(
                 Box::new(
                     ast::VarDefArray {
                         pos: begin,
-                        id: id,
-                        len: num,
-                        real_type: Box::new(()),
+                        id: id.to_string(),
+                        len: num as usize,
+                        real_type: Box::new(None),
                         vals: rval_list,
                     }
                 )
@@ -460,19 +469,28 @@ VarDeclList: Box<ast::VarDeclList> = {
     )
 };
 
+FnDeclStmt: Box<ast::FnDeclStmt> = {
+    <begin: @L> <fn_decl: FnDecl> Semicolon => Box::new(
+        ast::FnDeclStmt {
+            pos: begin,
+            fn_decl: fn_decl
+        }
+    )
+}
+
 FnDecl: Box<ast::FnDecl> = {
-    <begin: @L> Fn <id: Identifier> LParentheses ParamDecl RParentheses => Box::new(
+    <begin: @L> Fn <id: Identifier> LParentheses <param_decl: ParamDecl> RParentheses => Box::new(
         ast::FnDecl {
             pos: begin,
-            id: id,
+            id: id.to_string(),
             param_decl: param_decl,
-            ret_type: Box<None>,
+            ret_type: Box::new(None),
         }
     ),
-    <begin: @L> Fn <id: Identifier> LParentheses ParamDecl RParentheses RArrow <t: Type> => Box::new(
+    <begin: @L> Fn <id: Identifier> LParentheses <param_decl: ParamDecl> RParentheses RArrow <t: Type> => Box::new(
         ast::FnDecl {
             pos: begin,
-            id: id,
+            id: id.to_string(),
             param_decl: param_decl,
             ret_type: t,
         }
@@ -490,7 +508,7 @@ ParamDecl: Box<ast::ParamDecl> = {
 FnDef: Box<ast::FnDef> = {
     <begin: @L> <fn_decl: FnDecl> LCurlyBrace <code_block_stmt_list: CodeBlockStmtList> RCurlyBrace => Box::new(
         ast::FnDef {
-            pos: beign,
+            pos: begin,
             fn_decl: fn_decl,
             stmts: code_block_stmt_list
         }
@@ -501,7 +519,7 @@ CodeBlockStmtList: Box<ast::CodeBlockStmtList> = {
     <begin: @L> <head: CodeBlockStmt> <remainder: CodeBlockStmtList> => Box::new(
         ast::CodeBlockStmtList {
             head: head,
-            next: remainder
+            next: Some(remainder)
         }
     ),
     <begin: @L> <head: CodeBlockStmt> => Box::new(
@@ -554,7 +572,7 @@ CodeBlockStmt: Box<ast::CodeBlockStmt> = {
             pos: begin,
             inner: ast::CodeBlockStmtInner::Continue(
                 Box::new(
-                    ContinueStmt {
+                    ast::ContinueStmt {
                         pos: begin
                     }
                 )
@@ -566,7 +584,7 @@ CodeBlockStmt: Box<ast::CodeBlockStmt> = {
             pos: begin,
             inner: ast::CodeBlockStmtInner::Break(
                 Box::new(
-                    BreakStmt {
+                    ast::BreakStmt {
                         pos: begin
                     }
                 )
@@ -578,7 +596,7 @@ CodeBlockStmt: Box<ast::CodeBlockStmt> = {
             pos: begin,
             inner: ast::CodeBlockStmtInner::Null(
                 Box::new(
-                    NullStmt {
+                    ast::NullStmt {
                         pos: begin
                     }
                 )
@@ -641,7 +659,7 @@ BoolUnit_: Box<ast::BoolUnit> = {
                 )
             )
         }
-    )
+    ),
     <begin: @L> LParentheses <expr_unit_l: ExprUnit> GreaterThan <expr_unit_r: ExprUnit> RParentheses => Box::new(
         ast::BoolUnit {
             pos: begin,
@@ -656,7 +674,7 @@ BoolUnit_: Box<ast::BoolUnit> = {
                 )
             )
         }
-    )
+    ),
     <begin: @L> LParentheses <expr_unit_l: ExprUnit> GreaterEqual <expr_unit_r: ExprUnit> RParentheses => Box::new(
         ast::BoolUnit {
             pos: begin,
@@ -671,7 +689,7 @@ BoolUnit_: Box<ast::BoolUnit> = {
                 )
             )
         }
-    )
+    ),
     <begin: @L> LParentheses <expr_unit_l: ExprUnit> Equal <expr_unit_r: ExprUnit> RParentheses => Box::new(
         ast::BoolUnit {
             pos: begin,
@@ -686,7 +704,7 @@ BoolUnit_: Box<ast::BoolUnit> = {
                 )
             )
         }
-    )
+    ),
     <begin: @L> LParentheses <expr_unit_l: ExprUnit> NotEqual <expr_unit_r: ExprUnit> RParentheses => Box::new(
         ast::BoolUnit {
             pos: begin,
@@ -724,7 +742,7 @@ IfStmt: Box<ast::IfStmt> = {
             pos: begin,
             bool_unit: bool_unit_,
             if_stmts: if_stmts,
-            else_stmts: else_stmts
+            else_stmts: Some(else_stmts)
         }
     ),
 };
@@ -743,7 +761,7 @@ FnCall: Box<ast::FnCall> = {
     <begin: @L> <id: Identifier> LParentheses <rval_list: RightValList> RParentheses => Box::new(
         ast::FnCall {
             pos: begin,
-            name: id,
+            name: id.to_string(),
             vals: rval_list
         }
     )
@@ -779,7 +797,7 @@ BoolUnit: Box<ast::BoolUnit> = {
                 )
             )
         }
-    )
+    ),
     <begin: @L> LParentheses <expr_unit_l: ExprUnit> GreaterThan <expr_unit_r: ExprUnit> RParentheses => Box::new(
         ast::BoolUnit {
             pos: begin,
@@ -794,7 +812,7 @@ BoolUnit: Box<ast::BoolUnit> = {
                 )
             )
         }
-    )
+    ),
     <begin: @L> LParentheses <expr_unit_l: ExprUnit> GreaterEqual <expr_unit_r: ExprUnit> RParentheses => Box::new(
         ast::BoolUnit {
             pos: begin,
@@ -809,7 +827,7 @@ BoolUnit: Box<ast::BoolUnit> = {
                 )
             )
         }
-    )
+    ),
     <begin: @L> LParentheses <expr_unit_l: ExprUnit> Equal <expr_unit_r: ExprUnit> RParentheses => Box::new(
         ast::BoolUnit {
             pos: begin,
@@ -824,7 +842,7 @@ BoolUnit: Box<ast::BoolUnit> = {
                 )
             )
         }
-    )
+    ),
     <begin: @L> LParentheses <expr_unit_l: ExprUnit> NotEqual <expr_unit_r: ExprUnit> RParentheses => Box::new(
         ast::BoolUnit {
             pos: begin,
@@ -845,31 +863,37 @@ BoolUnit: Box<ast::BoolUnit> = {
             pos: begin,
             inner: ast::BoolUnitInner::BoolExpr(expr)
         }
-    )
+    ),
     <begin: @L> Not <bool_unit: BoolUnit> => Box::new(
         ast::BoolUnit {
             pos: begin,
             inner: ast::BoolUnitInner::BoolUOpExpr(Box::new(
-                pos: begin,
-                op: ast::BoolUOp::Not,
-                cond: bool_unit
+                ast::BoolUOpExpr {
+                    pos: begin,
+                    op: ast::BoolUOp::Not,
+                    cond: bool_unit
+                }
             ))
         }
     )
 };
 
-Type: Box<ast::Type> = {
+Type: Box<Option<ast::Type>> = {
     <begin: @L> Int => Box::new(
-        ast::Type {
-            pos: begin,
-            inner: ast::TypeInner::NativeType(Box::new(ast::NativeType::Int))
-        }
+        Some(
+            ast::Type {
+                pos: begin,
+                inner: ast::TypeInner::NativeType(Box::new(ast::NativeType::Int))
+            }
+        )
     ),
     <begin: @L> <id: Identifier> => Box::new(
-        ast::Type {
-            pos: begin,
-            inner: ast::TypeInner::StructType(id)
-        }
+        Some(
+            ast::Type {
+                pos: begin,
+                inner: ast::TypeInner::StructType(Box::new(id.to_string()))
+            }
+        )
     )
 }
 

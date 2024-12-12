@@ -32,7 +32,7 @@ pub enum IndexExprInner {
 
 pub struct IndexExpr {
     pub pos: Pos,
-    pub inner: Box<IndexExprInner>,
+    pub inner: IndexExprInner,
 }
 
 pub struct ArrayExpr {
@@ -50,7 +50,7 @@ pub struct MemberExpr {
 pub enum ExprUnitInner {
     Num(i32),
     Id(String),
-    Arith(Box<ArithExpr>),
+    ArithExpr(Box<ArithExpr>),
     FnCall(Box<FnCall>),
     ArrayExpr(Box<ArrayExpr>),
     MemberExpr(Box<MemberExpr>),
@@ -105,13 +105,13 @@ pub struct ArithUExpr {
 }
 
 pub enum ArithExprInner {
-    ArithBiOpExpr(ArithBiOpExpr),
-    ExprUnit(ExprUnit),
+    ArithBiOpExpr(Box<ArithBiOpExpr>),
+    ExprUnit(Box<ExprUnit>),
 }
 
 pub struct ArithExpr {
     pub pos: Pos,
-    pub inner: Box<ArithExprInner>,
+    pub inner: ArithExprInner,
 }
 
 pub struct BoolBiOpExpr {
@@ -128,20 +128,20 @@ pub struct BoolUOpExpr {
 }
 
 pub enum BoolExprInner {
-    BoolBiOpExpr(BoolBiOpExpr),
-    BoolUnit(BoolUnit),
+    BoolBiOpExpr(Box<BoolBiOpExpr>),
+    BoolUnit(Box<BoolUnit>),
 }
 
 pub struct BoolExpr {
     pub pos: Pos,
-    pub inner: Box<BoolExprInner>,
+    pub inner: BoolExprInner,
 }
 
 pub struct ComExpr {
     pub pos: Pos,
     pub op: ComOp,
-    pub left: ExprUnit,
-    pub right: ExprUnit,
+    pub left: Box<ExprUnit>,
+    pub right: Box<ExprUnit>,
 }
 
 pub enum BoolUnitInner {
@@ -185,7 +185,7 @@ pub struct AssignmentStmt {
 pub struct VarDeclScalar {
     pub pos: Pos,
     pub id: String,
-    pub real_type: Box<Type>,
+    pub real_type: Box<Option<Type>>,
 }
 
 pub struct VarDeclArray {
@@ -206,13 +206,13 @@ pub struct VarDecl {
 }
 
 pub enum VarDefInner {
-    Scalar(VarDefScalar),
-    Array(VarDefArray),
+    Scalar(Box<VarDefScalar>),
+    Array(Box<VarDefArray>),
 }
 
 pub struct VarDef {
     pub pos: Pos,
-    pub inner: Box<VarDefInner>,
+    pub inner: VarDefInner,
 }
 
 pub struct VarDefScalar {
@@ -264,7 +264,7 @@ pub struct ParamDecl {
 
 pub struct FnDef {
     pub pos: Pos,
-    pub fn_decl: Box<FnCall>,
+    pub fn_decl: Box<FnDecl>,
     pub stmts: Box<CodeBlockStmtList>,
 }
 
@@ -340,9 +340,9 @@ pub struct ProgramElementList {
 }
 
 pub enum ProgramElementInner {
-    VarDecl(Box<VarDeclStmt>),
+    VarDeclStmt(Box<VarDeclStmt>),
     StructDef(Box<StructDef>),
-    FnDecl(Box<FnDeclStmt>),
+    FnDeclStmt(Box<FnDeclStmt>),
     FnDef(Box<FnDef>),
 }
 
