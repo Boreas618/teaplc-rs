@@ -217,6 +217,14 @@ ArrayExpr: Box<ast::ArrayExpr> = {
 };
 
 BoolExpr: Box<ast::BoolExpr> = {
+    #[precedence(level="0")]
+    <begin: @L> <bu: BoolUnit> => Box::new(
+        ast::BoolExpr {
+            pos: begin,
+            inner: ast::BoolExprInner::BoolUnit(bu)
+        }
+    ),
+    #[precedence(level="1")] #[assoc(side="left")]
     <begin: @L> <bexpr_l: BoolExpr> And <bexpr_r: BoolExpr> => Box::new(
         ast::BoolExpr {
             pos: begin,
@@ -228,6 +236,7 @@ BoolExpr: Box<ast::BoolExpr> = {
             }
         }
     ),
+    #[precedence(level="2")] #[assoc(side="left")]
     <begin: @L> <bexpr_l: BoolExpr> Or <bexpr_r: BoolExpr> => Box::new(
         ast::BoolExpr {
             pos: begin,
@@ -239,12 +248,6 @@ BoolExpr: Box<ast::BoolExpr> = {
             }
         }
     ),
-    <begin: @L> <bu: BoolUnit> => Box::new(
-        ast::BoolExpr {
-            pos: begin,
-            inner: ast::BoolExprInner::BoolUnit(bu)
-        }
-    )
 };
 
 AssignmentStmt: Box<ast::AssignmentStmt> = {
