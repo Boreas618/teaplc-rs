@@ -13,6 +13,12 @@ ProgramElementList: Box<ast::ProgramElementList> = {
             element: pe,
             next: Some(pl)
         }
+    ),
+    <pe: ProgramElement> => Box::new(
+        ast::ProgramElementList {
+            element: pe,
+            next: None
+        }
     )
 };
 
@@ -101,7 +107,12 @@ ExprUnit: Box<ast::ExprUnit> = {
             }
         }
     ),
-    /* TODO: support SUB NUM %prec UMINUS */
+    <begin: @L> Sub <num: Num> => Box::new(
+        ast::ExprUnit {
+            pos: begin,
+            inner: ast::ExprUnitInner::Num(-num)
+        }
+    )
 };
 
 ArithExpr: Box<ast::ArithExpr> = {
@@ -479,11 +490,20 @@ FnDeclStmt: Box<ast::FnDeclStmt> = {
 }
 
 FnDecl: Box<ast::FnDecl> = {
+    /* TODO: Can the two couples be combined? */
     <begin: @L> Fn <id: Identifier> LParentheses <param_decl: ParamDecl> RParentheses => Box::new(
         ast::FnDecl {
             pos: begin,
             id: id.to_string(),
-            param_decl: param_decl,
+            param_decl: Some(param_decl),
+            ret_type: Box::new(None),
+        }
+    ),
+    <begin: @L> Fn <id: Identifier> LParentheses RParentheses => Box::new(
+        ast::FnDecl {
+            pos: begin,
+            id: id.to_string(),
+            param_decl: None,
             ret_type: Box::new(None),
         }
     ),
@@ -491,7 +511,15 @@ FnDecl: Box<ast::FnDecl> = {
         ast::FnDecl {
             pos: begin,
             id: id.to_string(),
-            param_decl: param_decl,
+            param_decl: Some(param_decl),
+            ret_type: t,
+        }
+    ),
+    <begin: @L> Fn <id: Identifier> LParentheses RParentheses RArrow <t: Type> => Box::new(
+        ast::FnDecl {
+            pos: begin,
+            id: id.to_string(),
+            param_decl: None,
             ret_type: t,
         }
     )
@@ -762,9 +790,16 @@ FnCall: Box<ast::FnCall> = {
         ast::FnCall {
             pos: begin,
             name: id.to_string(),
-            vals: rval_list
+            vals: Some(rval_list)
         }
-    )
+    ),
+    <begin: @L> <id: Identifier> LParentheses RParentheses => Box::new(
+        ast::FnCall {
+            pos: begin,
+            name: id.to_string(),
+            vals: None
+        }
+    ),
 };
 
 BoolUnit: Box<ast::BoolUnit> = {
