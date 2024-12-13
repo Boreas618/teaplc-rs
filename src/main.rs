@@ -12,8 +12,6 @@ fn main() {
     file.read_to_string(&mut prog).unwrap();
     let ast = teapl::ProgramParser::new().parse(&prog).unwrap();
     println!("{:#?}", ast);
-
-    println!("Hello, world!");
 }
 
 #[cfg(test)]

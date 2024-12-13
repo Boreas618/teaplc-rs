@@ -8,18 +8,12 @@ pub Program: Box<ast::Program> = {
 };
 
 ProgramElementList: Box<ast::ProgramElementList> = {
-    <pe: ProgramElement> <pl: ProgramElementList> => Box::new(
+    <pe: ProgramElement> <pl: ProgramElementList?> => Box::new(
         ast::ProgramElementList {
             element: pe,
-            next: Some(pl)
+            next: pl
         }
     ),
-    <pe: ProgramElement> => Box::new(
-        ast::ProgramElementList {
-            element: pe,
-            next: None
-        }
-    )
 };
 
 ProgramElement: Box<ast::ProgramElement> = {
@@ -490,39 +484,22 @@ FnDeclStmt: Box<ast::FnDeclStmt> = {
 }
 
 FnDecl: Box<ast::FnDecl> = {
-    /* TODO: Can the two couples be combined? */
-    <begin: @L> Fn <id: Identifier> LParentheses <param_decl: ParamDecl> RParentheses => Box::new(
+    <begin: @L> Fn <id: Identifier> LParentheses <param_decl: ParamDecl?> RParentheses => Box::new(
         ast::FnDecl {
             pos: begin,
             id: id.to_string(),
-            param_decl: Some(param_decl),
+            param_decl: param_decl,
             ret_type: Box::new(None),
         }
     ),
-    <begin: @L> Fn <id: Identifier> LParentheses RParentheses => Box::new(
+    <begin: @L> Fn <id: Identifier> LParentheses <param_decl: ParamDecl?> RParentheses RArrow <t: Type> => Box::new(
         ast::FnDecl {
             pos: begin,
             id: id.to_string(),
-            param_decl: None,
-            ret_type: Box::new(None),
-        }
-    ),
-    <begin: @L> Fn <id: Identifier> LParentheses <param_decl: ParamDecl> RParentheses RArrow <t: Type> => Box::new(
-        ast::FnDecl {
-            pos: begin,
-            id: id.to_string(),
-            param_decl: Some(param_decl),
+            param_decl: param_decl,
             ret_type: t,
         }
     ),
-    <begin: @L> Fn <id: Identifier> LParentheses RParentheses RArrow <t: Type> => Box::new(
-        ast::FnDecl {
-            pos: begin,
-            id: id.to_string(),
-            param_decl: None,
-            ret_type: t,
-        }
-    )
 };
 
 ParamDecl: Box<ast::ParamDecl> = {
@@ -786,18 +763,11 @@ WhileStmt: Box<ast::WhileStmt> = {
 };
 
 FnCall: Box<ast::FnCall> = {
-    <begin: @L> <id: Identifier> LParentheses <rval_list: RightValList> RParentheses => Box::new(
+    <begin: @L> <id: Identifier> LParentheses <rval_list: RightValList?> RParentheses => Box::new(
         ast::FnCall {
             pos: begin,
             name: id.to_string(),
-            vals: Some(rval_list)
-        }
-    ),
-    <begin: @L> <id: Identifier> LParentheses RParentheses => Box::new(
-        ast::FnCall {
-            pos: begin,
-            name: id.to_string(),
-            vals: None
+            vals: rval_list
         }
     ),
 };
