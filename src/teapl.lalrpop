@@ -336,13 +336,12 @@ VarDeclStmt: Box<ast::VarDeclStmt> = {
 VarDecl: Box<ast::VarDecl> = {
     <begin: @L> <id: Identifier> Colon <t: Type> => Box::new(
         ast::VarDecl {
-            pos: begin,
+            id: id.to_string(),
+            real_type: t,
             inner: ast::VarDeclInner::Scalar(
                 Box::new(
                     ast::VarDeclScalar {
-                        pos: begin,
-                        id: id.to_string(),
-                        real_type: t
+                        pos: begin
                     }
                 )
             )
@@ -351,13 +350,13 @@ VarDecl: Box<ast::VarDecl> = {
     <begin: @L> <id: Identifier> LSquareBracket <num: Num> RSquareBracket Colon <t: Type> => Box::new(
         ast::VarDecl {
             pos: begin,
+            id: id.to_string(),
+            real_type: t,
             inner: ast::VarDeclInner::Array(
                 Box::new(
                     ast::VarDeclArray {
                         pos: begin,
-                        id: id.to_string(),
-                        len: num as usize,
-                        real_type: t
+                        len: num as isize,
                     }
                 )
             )
@@ -366,12 +365,12 @@ VarDecl: Box<ast::VarDecl> = {
     <begin: @L> <id: Identifier> => Box::new(
         ast::VarDecl {
             pos: begin,
+            id: id.to_string(),
+            real_type: Box::new(None),
             inner: ast::VarDeclInner::Scalar(
                 Box::new(
                     ast::VarDeclScalar {
                         pos: begin,
-                        id: id.to_string(),
-                        real_type: Box::new(None)
                     }
                 )
             )
@@ -380,13 +379,13 @@ VarDecl: Box<ast::VarDecl> = {
     <begin: @L> <id: Identifier> LSquareBracket <num: Num> RSquareBracket => Box::new(
         ast::VarDecl {
             pos: begin,
+            id: id.to_string(),
+            real_type: Box::new(None)
             inner: ast::VarDeclInner::Array(
                 Box::new(
                     ast::VarDeclArray {
                         pos: begin,
-                        id: id.to_string(),
-                        len: num as usize,
-                        real_type: Box::new(None)
+                        len: num as isize,
                     }
                 )
             )
@@ -398,12 +397,12 @@ VarDef: Box<ast::VarDef> = {
     <begin: @L> <id: Identifier> Colon <t: Type> Assignment <right_val: RightVal> => Box::new(
         ast::VarDef {
             pos: begin,
+            id: id.to_string(),
+            real_type: t,
             inner: ast::VarDefInner::Scalar(
                 Box::new(
                     ast::VarDefScalar {
                         pos: begin,
-                        id: id.to_string(),
-                        real_type: t,
                         val: right_val,
                     }
                 )
@@ -413,13 +412,13 @@ VarDef: Box<ast::VarDef> = {
     <begin: @L> <id: Identifier> LSquareBracket <num: Num> RSquareBracket Colon <t: Type> Assignment LCurlyBrace <rval_list: RightValList> RCurlyBrace => Box::new(
         ast::VarDef {
             pos: begin,
+            id: id.to_string(),
+            real_type: t,
             inner: ast::VarDefInner::Array(
                 Box::new(
                     ast::VarDefArray {
                         pos: begin,
-                        id: id.to_string(),
-                        len: num as usize,
-                        real_type: t,
+                        len: num as isize,
                         vals: rval_list,
                     }
                 )
@@ -429,12 +428,12 @@ VarDef: Box<ast::VarDef> = {
     <begin: @L> <id: Identifier> Assignment <right_val: RightVal> => Box::new(
         ast::VarDef {
             pos: begin,
+            id: id.to_string(),
+            real_type: Box::new(None),
             inner: ast::VarDefInner::Scalar(
                 Box::new(
                     ast::VarDefScalar {
                         pos: begin,
-                        id: id.to_string(),
-                        real_type: Box::new(None),
                         val: right_val,
                     }
                 )
@@ -444,13 +443,13 @@ VarDef: Box<ast::VarDef> = {
     <begin: @L> <id: Identifier> LSquareBracket <num: Num> RSquareBracket Assignment LCurlyBrace <rval_list: RightValList> RCurlyBrace => Box::new(
         ast::VarDef {
             pos: begin,
+            id: id.to_string(),
+            real_type: Box::new(None),
             inner: ast::VarDefInner::Array(
                 Box::new(
                     ast::VarDefArray {
                         pos: begin,
-                        id: id.to_string(),
-                        len: num as usize,
-                        real_type: Box::new(None),
+                        len: num as isize,
                         vals: rval_list,
                     }
                 )

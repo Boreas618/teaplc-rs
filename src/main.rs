@@ -1,4 +1,5 @@
 mod ast;
+mod ir;
 lalrpop_mod!(pub teapl);
 
 use lalrpop_util::lalrpop_mod;
@@ -12,6 +13,8 @@ fn main() {
     file.read_to_string(&mut prog).unwrap();
     let ast = teapl::ProgramParser::new().parse(&prog).unwrap();
     println!("{:#?}", ast);
+
+    ir::gen(ast);
 }
 
 #[cfg(test)]

@@ -1,3 +1,5 @@
+use crate::ir;
+
 type Pos = usize;
 
 #[derive(Debug)]
@@ -21,6 +23,29 @@ pub struct Type {
 pub struct RightValList {
     pub head: Box<RightVal>,
     pub next: Option<Box<RightValList>>,
+}
+
+impl RightValList {
+    pub fn iter(&self) -> RightValListIterator {
+        RightValListIterator {
+            current: Some(self),
+        }
+    }
+}
+
+pub struct RightValListIterator<'a> {
+    current: Option<&'a RightValList>,
+}
+
+impl<'a> Iterator for RightValListIterator<'a> {
+    type Item = &'a RightVal;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.current.take().map(|node| {
+            self.current = node.next.as_ref().map(|next_node| &**next_node);
+            &*node.head
+        })
+    }
 }
 
 #[derive(Debug)]
@@ -73,7 +98,7 @@ pub struct ExprUnit {
     pub inner: ExprUnitInner,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ArithUOp {
     Neg,
 }
@@ -86,12 +111,12 @@ pub enum ArithBiOp {
     Div,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BoolUOp {
     Not,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum BoolBiOp {
     And,
     Or,
@@ -217,16 +242,12 @@ pub struct AssignmentStmt {
 #[derive(Debug)]
 pub struct VarDeclScalar {
     pub pos: Pos,
-    pub id: String,
-    pub real_type: Box<Option<Type>>,
 }
 
 #[derive(Debug)]
 pub struct VarDeclArray {
     pub pos: Pos,
-    pub id: String,
-    pub len: usize,
-    pub real_type: Box<Option<Type>>,
+    pub len: isize,
 }
 
 #[derive(Debug)]
@@ -238,6 +259,8 @@ pub enum VarDeclInner {
 #[derive(Debug)]
 pub struct VarDecl {
     pub pos: Pos,
+    pub id: String,
+    pub real_type: Box<Option<Type>>,
     pub inner: VarDeclInner,
 }
 
@@ -250,23 +273,21 @@ pub enum VarDefInner {
 #[derive(Debug)]
 pub struct VarDef {
     pub pos: Pos,
+    pub id: String,
+    pub real_type: Box<Option<Type>>,
     pub inner: VarDefInner,
 }
 
 #[derive(Debug)]
 pub struct VarDefScalar {
     pub pos: Pos,
-    pub id: String,
-    pub real_type: Box<Option<Type>>,
     pub val: Box<RightVal>,
 }
 
 #[derive(Debug)]
 pub struct VarDefArray {
     pub pos: Pos,
-    pub id: String,
-    pub len: usize,
-    pub real_type: Box<Option<Type>>,
+    pub len: isize,
     pub vals: Box<RightValList>,
 }
 
@@ -274,6 +295,22 @@ pub struct VarDefArray {
 pub enum VarDeclStmtInner {
     Decl(Box<VarDecl>),
     Def(Box<VarDef>),
+}
+
+impl VarDeclStmtInner {
+    pub fn get_id(&self) -> &String {
+        match self {
+            VarDeclStmtInner::Decl(decl) => &decl.id,
+            VarDeclStmtInner::Def(def) => &def.id,
+        }
+    }
+
+    pub fn get_type(&self) -> &Box<Option<Type>> {
+        match self {
+            VarDeclStmtInner::Decl(decl) => &decl.real_type,
+            VarDeclStmtInner::Def(def) => &def.real_type,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -397,6 +434,29 @@ pub struct Program {
 pub struct ProgramElementList {
     pub element: Box<ProgramElement>,
     pub next: Option<Box<ProgramElementList>>,
+}
+
+impl ProgramElementList {
+    pub fn iter(&self) -> ProgramElementListIterator {
+        ProgramElementListIterator {
+            current: Some(self),
+        }
+    }
+}
+
+pub struct ProgramElementListIterator<'a> {
+    current: Option<&'a ProgramElementList>,
+}
+
+impl<'a> Iterator for ProgramElementListIterator<'a> {
+    type Item = &'a ProgramElement;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.current.take().map(|node| {
+            self.current = node.next.as_ref().map(|next_node| &**next_node);
+            &*node.element
+        })
+    }
 }
 
 #[derive(Debug)]
