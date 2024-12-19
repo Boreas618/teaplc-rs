@@ -1,4 +1,4 @@
-use crate::ir;
+use std::rc::Rc;
 
 type Pos = usize;
 
@@ -77,7 +77,7 @@ pub struct ArrayExpr {
 #[derive(Debug)]
 pub struct MemberExpr {
     pub pos: Pos,
-    pub var_id: String,
+    pub struct_id: Box<LeftVal>,
     pub member_id: String,
 }
 
@@ -260,7 +260,7 @@ pub enum VarDeclInner {
 pub struct VarDecl {
     pub pos: Pos,
     pub id: String,
-    pub real_type: Box<Option<Type>>,
+    pub real_type: Rc<Option<Type>>,
     pub inner: VarDeclInner,
 }
 
@@ -274,7 +274,7 @@ pub enum VarDefInner {
 pub struct VarDef {
     pub pos: Pos,
     pub id: String,
-    pub real_type: Box<Option<Type>>,
+    pub real_type: Rc<Option<Type>>,
     pub inner: VarDefInner,
 }
 
@@ -305,7 +305,7 @@ impl VarDeclStmtInner {
         }
     }
 
-    pub fn get_type(&self) -> &Box<Option<Type>> {
+    pub fn get_type(&self) -> &Rc<Option<Type>> {
         match self {
             VarDeclStmtInner::Decl(decl) => &decl.real_type,
             VarDeclStmtInner::Def(def) => &def.real_type,
@@ -325,6 +325,29 @@ pub struct VarDeclList {
     pub next: Option<Box<VarDeclList>>,
 }
 
+pub struct VarDeclListIterator<'a> {
+    current: Option<&'a VarDeclList>,
+}
+
+impl<'a> Iterator for VarDeclListIterator<'a> {
+    type Item = &'a VarDecl;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.current.take().map(|node| {
+            self.current = node.next.as_ref().map(|next_node| &**next_node);
+            &*node.head
+        })
+    }
+}
+
+impl VarDeclList {
+    pub fn iter(&self) -> VarDeclListIterator {
+        VarDeclListIterator {
+            current: Some(self),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct StructDef {
     pub pos: Pos,
@@ -337,7 +360,7 @@ pub struct FnDecl {
     pub pos: Pos,
     pub id: String,
     pub param_decl: Option<Box<ParamDecl>>,
-    pub ret_type: Box<Option<Type>>,
+    pub ret_type: Rc<Option<Type>>,
 }
 
 #[derive(Debug)]

@@ -1,5 +1,6 @@
 use std::str::FromStr;
 use crate::ast;
+use std::rc::Rc;
 
 grammar;
 
@@ -82,14 +83,14 @@ ExprUnit: Box<ast::ExprUnit> = {
     ),
     <begin: @L> <lv: LeftVal> Dot <member_id: Identifier> => Box::new(
         match lv.inner {
-            ast::LeftValInner::Id(lval_id) => {
+            ast::LeftValInner::Id(_) => {
                 ast::ExprUnit {
                     pos: begin,
                     inner: ast::ExprUnitInner::MemberExpr(
                         Box::new(
                             ast::MemberExpr {
                                 pos: begin,
-                                var_id: String::from(lval_id),
+                                struct_id: lv,
                                 member_id: String::from(member_id)
                             }
                         )
@@ -291,10 +292,7 @@ LeftVal: Box<ast::LeftVal> = {
                 Box::new(
                     ast::MemberExpr {
                         pos: begin,
-                        var_id: match lval.inner {
-                            ast::LeftValInner::Id(id) => id.to_string(),
-                            _ => "?".to_string() // TODO: How to deal with this?
-                        },
+                        struct_id: lval,
                         member_id: id.to_string(),
                     }
                 )
@@ -336,6 +334,7 @@ VarDeclStmt: Box<ast::VarDeclStmt> = {
 VarDecl: Box<ast::VarDecl> = {
     <begin: @L> <id: Identifier> Colon <t: Type> => Box::new(
         ast::VarDecl {
+            pos: begin,
             id: id.to_string(),
             real_type: t,
             inner: ast::VarDeclInner::Scalar(
@@ -366,7 +365,7 @@ VarDecl: Box<ast::VarDecl> = {
         ast::VarDecl {
             pos: begin,
             id: id.to_string(),
-            real_type: Box::new(None),
+            real_type: Rc::new(None),
             inner: ast::VarDeclInner::Scalar(
                 Box::new(
                     ast::VarDeclScalar {
@@ -380,7 +379,7 @@ VarDecl: Box<ast::VarDecl> = {
         ast::VarDecl {
             pos: begin,
             id: id.to_string(),
-            real_type: Box::new(None)
+            real_type: Rc::new(None),
             inner: ast::VarDeclInner::Array(
                 Box::new(
                     ast::VarDeclArray {
@@ -429,7 +428,7 @@ VarDef: Box<ast::VarDef> = {
         ast::VarDef {
             pos: begin,
             id: id.to_string(),
-            real_type: Box::new(None),
+            real_type: Rc::new(None),
             inner: ast::VarDefInner::Scalar(
                 Box::new(
                     ast::VarDefScalar {
@@ -444,7 +443,7 @@ VarDef: Box<ast::VarDef> = {
         ast::VarDef {
             pos: begin,
             id: id.to_string(),
-            real_type: Box::new(None),
+            real_type: Rc::new(None),
             inner: ast::VarDefInner::Array(
                 Box::new(
                     ast::VarDefArray {
@@ -488,7 +487,7 @@ FnDecl: Box<ast::FnDecl> = {
             pos: begin,
             id: id.to_string(),
             param_decl: param_decl,
-            ret_type: Box::new(None),
+            ret_type: Rc::new(None),
         }
     ),
     <begin: @L> Fn <id: Identifier> LParentheses <param_decl: ParamDecl?> RParentheses RArrow <t: Type> => Box::new(
@@ -882,8 +881,8 @@ BoolUnit: Box<ast::BoolUnit> = {
     )
 };
 
-Type: Box<Option<ast::Type>> = {
-    <begin: @L> Int => Box::new(
+Type: Rc<Option<ast::Type>> = {
+    <begin: @L> Int => Rc::new(
         Some(
             ast::Type {
                 pos: begin,
@@ -891,7 +890,7 @@ Type: Box<Option<ast::Type>> = {
             }
         )
     ),
-    <begin: @L> <id: Identifier> => Box::new(
+    <begin: @L> <id: Identifier> => Rc::new(
         Some(
             ast::Type {
                 pos: begin,
